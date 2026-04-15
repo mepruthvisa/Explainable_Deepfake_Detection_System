@@ -1,0 +1,54 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Analysis Result</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; max-width: 960px; margin: 32px auto; }
+    .row { display:flex; gap:20px; flex-wrap: wrap; }
+    .card { padding: 16px; border: 1px solid #eee; border-radius: 12px; box-shadow: 0 2px 14px rgba(0,0,0,.04); }
+    video { max-width: 100%; height: auto; border-radius: 10px; }
+    .grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap:12px; }
+    img { width:100%; height:auto; border-radius: 10px; border:1px solid #eee; }
+    a.btn { display:inline-block; margin-top:10px; padding:10px 16px; border-radius:8px; background:#2563eb; color:#fff; text-decoration:none; }
+    a.btn:hover { background:#1d4ed8; }
+  </style>
+</head>
+<body>
+  <h2>Result</h2>
+
+  <div class="row">
+    <div class="card" style="flex:1 1 560px;">
+      <h3>Annotated Video</h3>
+      <video controls controlsList="nodownload">
+        <source src="{{ url_for('download_outputs', filename=video_file) }}" type="video/mp4">
+        Your browser does not support the video tag.
+      </video>
+      <div>
+        <a class="btn" href="{{ url_for('download_outputs', filename=video_file) }}">Download Annotated MP4</a>
+      </div>
+    </div>
+
+    <div class="card" style="flex:1 1 260px;">
+      <h3>Timeline CSV</h3>
+      <p>Per-frame log of face presence, label, p_real and confidence.</p>
+      <a class="btn" href="{{ url_for('download_outputs', filename=csv_file) }}">Download CSV</a>
+    </div>
+  </div>
+
+  {% if cam_imgs and cam_imgs|length > 0 %}
+    <h3 style="margin-top:28px;">Grad-CAM Snapshots</h3>
+    <div class="grid">
+      {% for img in cam_imgs %}
+        <a href="{{ url_for('serve_snaps', filename=img) }}" target="_blank" title="{{ img }}">
+          <img src="{{ url_for('serve_snaps', filename=img) }}" alt="{{ img }}">
+        </a>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  <p style="margin-top:24px;">
+    <a href="{{ url_for('index') }}">&larr; Analyze another video</a>
+  </p>
+</body>
+</html>

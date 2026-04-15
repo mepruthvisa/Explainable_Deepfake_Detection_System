@@ -1,0 +1,56 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Deepfake Video Checker</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; max-width: 840px; margin: 32px auto; }
+    .card { padding: 20px; border: 1px solid #eee; border-radius: 12px; box-shadow: 0 2px 14px rgba(0,0,0,.04); }
+    label { display:block; margin-top:10px; font-weight:600; }
+    input[type="number"], input[type="text"] { padding:8px; width: 160px; }
+    .row { display:flex; gap:18px; flex-wrap: wrap; align-items: center; }
+    button { margin-top:16px; padding:10px 16px; border:0; background:#2563eb; color:#fff; border-radius:8px; cursor:pointer; }
+    button:hover { background:#1d4ed8; }
+    .help { color:#666; font-size: 13px; }
+  </style>
+</head>
+<body>
+  <h2>Deepfake Video Checker</h2>
+  {% with messages = get_flashed_messages() %}
+    {% if messages %}
+      <ul>
+        {% for m in messages %}
+          <li>{{ m }}</li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+  {% endwith %}
+
+  <div class="card">
+    <form method="post" action="{{ url_for('upload') }}" enctype="multipart/form-data">
+      <label>Upload video (mp4/avi/mov/mkv/webm)</label>
+      <input type="file" name="video" accept=".mp4,.avi,.mov,.mkv,.webm" required>
+
+      <div class="row">
+        <div>
+          <label>Process every Nth frame</label>
+          <input type="number" name="every" min="1" value="1">
+          <div class="help">Use 2–5 for faster runs on long videos.</div>
+        </div>
+        <div>
+          <label>Face detect min conf</label>
+          <input type="text" name="min_face" value="0.5">
+          <div class="help">MediaPipe threshold (0–1).</div>
+        </div>
+        <div>
+          <label>Save Grad-CAM every (sec)</label>
+          <input type="text" name="cam_every" value="0.0">
+          <div class="help">0 disables snapshots.</div>
+        </div>
+      </div>
+
+      <button type="submit">Analyze</button>
+    </form>
+  </div>
+</body>
+</html>

@@ -1,0 +1,1683 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <title>DeepSight — AI Deepfake Detector</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Mono:wght@400;700&display=swap"
+    rel="stylesheet">
+  <style>
+    :root {
+      --bg: #ffffff;
+      --bg2: #f8f9fa;
+      --bg3: #f1f3f4;
+      --border: rgba(0, 0, 0, 0.08);
+      --border2: rgba(0, 0, 0, 0.14);
+      --text: #202124;
+      --text2: #5f6368;
+      --text3: #9aa0a6;
+      --g-blue: #4285f4;
+      --g-red: #ea4335;
+      --g-yellow: #fbbc04;
+      --g-green: #34a853;
+      --g-blue-l: rgba(66, 133, 244, 0.1);
+      --g-red-l: rgba(234, 67, 53, 0.09);
+      --g-yellow-l: rgba(251, 188, 4, 0.1);
+      --g-green-l: rgba(52, 168, 83, 0.09);
+      --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.10), 0 1px 2px rgba(0, 0, 0, 0.06);
+      --shadow-md: 0 4px 18px rgba(0, 0, 0, 0.09), 0 2px 6px rgba(0, 0, 0, 0.05);
+      --shadow-lg: 0 10px 44px rgba(0, 0, 0, 0.11), 0 3px 10px rgba(0, 0, 0, 0.06);
+      --shadow-xl: 0 20px 60px rgba(0, 0, 0, 0.14);
+      --font: 'Inter', 'Google Sans', sans-serif;
+      --mono: 'Space Mono', monospace;
+      --r: 24px;
+      --r-pill: 100px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      overflow-x: hidden;
+      cursor: none;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── CURSOR ── */
+    #cur {
+      width: 10px;
+      height: 10px;
+      background: var(--g-blue);
+      border-radius: 50%;
+      position: fixed;
+      top: 0;
+      left: 0;
+      pointer-events: none;
+      z-index: 9999;
+      transform: translate(-50%, -50%);
+      transition: background .15s, transform .1s;
+      mix-blend-mode: multiply;
+    }
+
+    #cur-ring {
+      width: 34px;
+      height: 34px;
+      border: 2px solid rgba(66, 133, 244, .3);
+      border-radius: 50%;
+      position: fixed;
+      top: 0;
+      left: 0;
+      pointer-events: none;
+      z-index: 9998;
+      transform: translate(-50%, -50%);
+    }
+
+    /* ── SHAPE LAYER ── */
+    #shapes {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+    }
+
+    /* ── HEADER ── */
+    header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 200;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      padding: 0 36px;
+      background: rgba(255, 255, 255, .88);
+      backdrop-filter: blur(20px) saturate(180%);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 1.05rem;
+      font-weight: 800;
+      color: var(--text);
+      text-decoration: none;
+      letter-spacing: -.01em;
+    }
+
+    .logo-box {
+      width: 32px;
+      height: 32px;
+      border-radius: 10px;
+      background: var(--g-blue);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .header-right {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .h-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      border-radius: var(--r-pill);
+      font-size: .77rem;
+      font-weight: 700;
+      background: var(--bg3);
+      color: var(--text2);
+      border: 1px solid var(--border);
+    }
+
+    .h-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--g-green);
+      animation: blink 2s ease-in-out infinite;
+    }
+
+    @keyframes blink {
+
+      0%,
+      100% {
+        opacity: 1;
+      }
+
+      50% {
+        opacity: .3;
+      }
+    }
+
+    /* ── HERO ── */
+    .hero {
+      position: relative;
+      z-index: 10;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 80px 24px 72px;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 20px;
+      border-radius: var(--r-pill);
+      background: var(--g-blue-l);
+      color: var(--g-blue);
+      font-size: .8rem;
+      font-weight: 700;
+      letter-spacing: .02em;
+      margin-bottom: 36px;
+      opacity: 0;
+      animation: up .7s .1s ease both;
+    }
+
+    .hero-h1 {
+      font-size: clamp(3rem, 8vw, 7rem);
+      font-weight: 900;
+      line-height: 1.0;
+      letter-spacing: -.04em;
+      margin-bottom: 24px;
+      opacity: 0;
+      animation: up .8s .25s ease both;
+    }
+
+    .hero-h1 .line2 {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0;
+    }
+
+
+
+    .hero-sub {
+      font-size: clamp(1rem, 2vw, 1.2rem);
+      color: var(--text2);
+      font-weight: 500;
+      max-width: 500px;
+      line-height: 1.7;
+      margin-bottom: 52px;
+      opacity: 0;
+      animation: up .8s .4s ease both;
+    }
+
+    /* ── UPLOAD CARD ── */
+    .upload-wrap {
+      width: 100%;
+      max-width: 620px;
+      opacity: 0;
+      animation: up .9s .55s ease both;
+    }
+
+    .upload-card {
+      background: var(--bg);
+      border: 2px solid var(--border);
+      border-radius: var(--r);
+      padding: 36px 32px;
+      box-shadow: var(--shadow-lg);
+      cursor: pointer;
+      transition: border-color .25s, box-shadow .25s, transform .2s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .upload-card:hover {
+      border-color: var(--g-blue);
+      box-shadow: var(--shadow-xl);
+      transform: translateY(-3px);
+    }
+
+    .upload-card.dragover {
+      border-color: var(--g-blue);
+      background: #f0f6ff;
+      box-shadow: 0 0 0 4px rgba(66, 133, 244, .12);
+    }
+
+    .upload-card.has-file {
+      border-color: var(--g-green);
+    }
+
+    .upload-inner {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .upload-ring {
+      width: 68px;
+      height: 68px;
+      border-radius: 50%;
+      background: var(--g-blue-l);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background .3s, transform .3s;
+    }
+
+    .upload-card:hover .upload-ring {
+      background: rgba(66, 133, 244, .18);
+      transform: scale(1.08);
+    }
+
+    .upload-card.has-file .upload-ring {
+      background: var(--g-green-l);
+    }
+
+    .upload-title {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .upload-sub {
+      font-size: .8rem;
+      color: var(--text3);
+      font-family: var(--mono);
+      text-align: center;
+      margin-top: 4px;
+    }
+
+    .upload-sub kbd {
+      display: inline-block;
+      padding: 1px 7px;
+      background: var(--bg3);
+      border: 1px solid var(--border2);
+      border-radius: 6px;
+      font-family: var(--mono);
+      font-size: .7rem;
+      color: var(--text2);
+    }
+
+    .file-picked {
+      display: none;
+      align-items: center;
+      gap: 6px;
+      font-size: .84rem;
+      font-weight: 700;
+      color: var(--g-green);
+    }
+
+    .file-picked.show {
+      display: flex;
+    }
+
+    .analyze-btn {
+      display: none;
+      padding: 14px 44px;
+      border-radius: var(--r-pill);
+      background: var(--g-blue);
+      color: #fff;
+      font-family: var(--font);
+      font-size: .95rem;
+      font-weight: 800;
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 3px 10px rgba(66, 133, 244, .35);
+      transition: background .2s, box-shadow .2s, transform .15s;
+      letter-spacing: .01em;
+    }
+
+    .analyze-btn:hover {
+      background: #1a73e8;
+      box-shadow: 0 6px 22px rgba(66, 133, 244, .45);
+      transform: translateY(-2px);
+    }
+
+    .analyze-btn:active {
+      transform: translateY(0);
+    }
+
+    .analyze-btn.show {
+      display: block;
+    }
+
+    .analyze-btn:disabled {
+      opacity: .4;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* scroll cue */
+    .scroll-cue {
+      position: absolute;
+      bottom: 32px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      color: var(--text3);
+      font-size: .72rem;
+      letter-spacing: .06em;
+      opacity: 0;
+      animation: fadeIn 1s 1.8s ease both;
+    }
+
+    .arrow-down {
+      width: 18px;
+      height: 18px;
+      border-right: 2px solid var(--text3);
+      border-bottom: 2px solid var(--text3);
+      transform: rotate(45deg);
+      animation: arrowBounce 1.6s ease-in-out infinite;
+    }
+
+    @keyframes arrowBounce {
+
+      0%,
+      100% {
+        transform: rotate(45deg) translate(0, 0);
+        opacity: .4;
+      }
+
+      50% {
+        transform: rotate(45deg) translate(3px, 3px);
+        opacity: 1;
+      }
+    }
+
+    /* ── SECTIONS ── */
+    .divider {
+      height: 1px;
+      background: var(--border);
+      margin: 0 32px;
+    }
+
+    .section {
+      position: relative;
+      z-index: 10;
+      max-width: 1060px;
+      margin: 0 auto;
+      padding: 96px 28px;
+    }
+
+    .section-center {
+      text-align: center;
+      margin-bottom: 56px;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 6px 16px;
+      border-radius: var(--r-pill);
+      font-size: .73rem;
+      font-weight: 800;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      margin-bottom: 18px;
+    }
+
+    .section-h2 {
+      font-size: clamp(2rem, 4vw, 2.9rem);
+      font-weight: 800;
+      letter-spacing: -.028em;
+      line-height: 1.15;
+      color: var(--text);
+      margin-bottom: 14px;
+    }
+
+    .section-p {
+      font-size: .98rem;
+      color: var(--text2);
+      line-height: 1.72;
+      max-width: 520px;
+      margin: 0 auto;
+    }
+
+    /* ── HOW CARDS ── */
+    .how-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 18px;
+    }
+
+    .how-card {
+      background: var(--bg);
+      border: 1.5px solid var(--border);
+      border-radius: var(--r);
+      padding: 30px 24px;
+      transition: all .3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .how-card:hover {
+      box-shadow: var(--shadow-md);
+      transform: translateY(-5px);
+    }
+
+    .how-card::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      border-radius: 2px 2px 0 0;
+      transform: scaleX(0);
+      transition: transform .35s;
+    }
+
+    .how-card:hover::after {
+      transform: scaleX(1);
+    }
+
+    .how-card.c-blue::after {
+      background: var(--g-blue);
+    }
+
+    .how-card.c-red::after {
+      background: var(--g-red);
+    }
+
+    .how-card.c-yellow::after {
+      background: var(--g-yellow);
+    }
+
+    .how-card.c-green::after {
+      background: var(--g-green);
+    }
+
+    .how-step {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: var(--r-pill);
+      font-size: .62rem;
+      font-weight: 800;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      font-family: var(--mono);
+      margin-bottom: 18px;
+    }
+
+    .how-icon {
+      width: 50px;
+      height: 50px;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      margin-bottom: 18px;
+    }
+
+    .how-title {
+      font-size: .97rem;
+      font-weight: 800;
+      color: var(--text);
+      margin-bottom: 10px;
+    }
+
+    .how-desc {
+      font-size: .83rem;
+      color: var(--text2);
+      line-height: 1.65;
+    }
+
+    /* ── TEAM ── */
+    .team-section {
+      position: relative;
+      z-index: 10;
+      max-width: 1060px;
+      margin: 0 auto;
+      padding: 96px 28px 80px;
+    }
+
+    .guide-wrap {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 36px;
+    }
+
+    .guide-card {
+      background: linear-gradient(135deg, #faf5ff, #fff);
+      border: 1.5px solid rgba(168, 85, 247, .18);
+      border-radius: var(--r);
+      padding: 28px 28px;
+      display: flex;
+      align-items: center;
+      gap: 22px;
+      max-width: 500px;
+      width: 100%;
+      box-shadow: var(--shadow-sm);
+      position: relative;
+      overflow: hidden;
+      transition: all .3s;
+    }
+
+    .guide-card:hover {
+      box-shadow: var(--shadow-md);
+      transform: translateY(-3px);
+    }
+
+    .guide-badge {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      padding: 3px 12px;
+      border-radius: var(--r-pill);
+      font-size: .62rem;
+      font-weight: 800;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      background: rgba(124, 58, 237, .1);
+      color: #7c3aed;
+      border: 1px solid rgba(124, 58, 237, .2);
+    }
+
+    .team-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+      gap: 18px;
+    }
+
+    .team-card {
+      background: var(--bg);
+      border: 1.5px solid var(--border);
+      border-radius: var(--r);
+      padding: 26px 22px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 12px;
+      transition: all .3s;
+    }
+
+    .team-card:hover {
+      box-shadow: var(--shadow-md);
+      transform: translateY(-4px);
+    }
+
+    .t-avatar {
+      width: 60px;
+      height: 60px;
+      border-radius: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.05rem;
+      font-weight: 900;
+      color: #fff;
+      box-shadow: var(--shadow-sm);
+      letter-spacing: .02em;
+      flex-shrink: 0;
+    }
+
+    .t-name {
+      font-size: .97rem;
+      font-weight: 800;
+      color: var(--text);
+    }
+
+    .t-badge {
+      display: inline-block;
+      padding: 3px 11px;
+      border-radius: var(--r-pill);
+      font-size: .63rem;
+      font-weight: 800;
+      letter-spacing: .07em;
+      text-transform: uppercase;
+    }
+
+    .t-dept {
+      font-size: .8rem;
+      color: var(--text2);
+    }
+
+    .t-inst {
+      font-size: .74rem;
+      color: var(--text3);
+      margin-top: 2px;
+    }
+
+    .t-email {
+      font-family: var(--mono);
+      font-size: .63rem;
+      color: var(--g-blue);
+      text-decoration: none;
+      transition: color .2s;
+    }
+
+    .t-email:hover {
+      color: #1a73e8;
+      text-decoration: underline;
+    }
+
+    .inst-bar {
+      margin-top: 52px;
+      text-align: center;
+    }
+
+    .inst-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 14px;
+      padding: 16px 26px;
+      border-radius: var(--r);
+      background: var(--bg3);
+      border: 1.5px solid var(--border);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .inst-icon {
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, var(--g-blue), var(--g-green));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      font-size: .8rem;
+      color: #fff;
+      flex-shrink: 0;
+    }
+
+    .inst-name {
+      font-size: .9rem;
+      font-weight: 800;
+      color: var(--text);
+    }
+
+    .inst-sub {
+      font-size: .74rem;
+      color: var(--text2);
+      margin-top: 2px;
+    }
+
+    /* ── FOOTER ── */
+    footer {
+      position: relative;
+      z-index: 10;
+      border-top: 1px solid var(--border);
+      padding: 36px 24px;
+      text-align: center;
+      font-family: var(--mono);
+      font-size: .72rem;
+      color: var(--text3);
+    }
+
+    /* ── CHAT ── */
+    #chat-wrapper {
+      display: none;
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 80px 20px 200px;
+      position: relative;
+      z-index: 10;
+    }
+
+    #chat-wrapper.visible {
+      display: block;
+    }
+
+    #messages {
+      display: flex;
+      flex-direction: column;
+      gap: 36px;
+    }
+
+    .msg-user {
+      display: flex;
+      justify-content: flex-end;
+      animation: up .4s ease both;
+    }
+
+    .msg-user img {
+      border-radius: 18px;
+      max-width: 300px;
+      max-height: 300px;
+      object-fit: cover;
+      box-shadow: var(--shadow-md);
+      border: 1.5px solid var(--border);
+    }
+
+    .msg-ai {
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+      animation: up .4s ease both;
+    }
+
+    .ai-av {
+      width: 36px;
+      height: 36px;
+      border-radius: 12px;
+      background: var(--g-blue);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      box-shadow: 0 2px 8px rgba(66, 133, 244, .3);
+    }
+
+    .ai-body {
+      flex: 1;
+    }
+
+    .verdict-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 20px;
+      border-radius: var(--r-pill);
+      font-size: .8rem;
+      font-weight: 800;
+      letter-spacing: .03em;
+      margin-bottom: 18px;
+    }
+
+    .v-fake {
+      background: rgba(234, 67, 53, .09);
+      color: #c5221f;
+      border: 1.5px solid rgba(234, 67, 53, .2);
+    }
+
+    .v-real {
+      background: rgba(52, 168, 83, .09);
+      color: #137333;
+      border: 1.5px solid rgba(52, 168, 83, .2);
+    }
+
+    .v-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      animation: blink 1.5s ease-in-out infinite;
+    }
+
+    .v-fake .v-dot {
+      background: #ea4335;
+    }
+
+    .v-real .v-dot {
+      background: #34a853;
+    }
+
+    .expl-card {
+      background: var(--bg2);
+      border: 1.5px solid var(--border);
+      border-radius: 16px;
+      padding: 18px 20px;
+      font-size: .91rem;
+      color: var(--text2);
+      line-height: 1.72;
+      margin-bottom: 22px;
+    }
+
+    .cam-label {
+      font-family: var(--mono);
+      font-size: .63rem;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: var(--text3);
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .cam-label::before {
+      content: '';
+      display: block;
+      width: 14px;
+      height: 2.5px;
+      background: var(--g-blue);
+      border-radius: 2px;
+    }
+
+    .cam-wrap {
+      border-radius: 16px;
+      overflow: hidden;
+      border: 1.5px solid var(--border);
+      box-shadow: var(--shadow-md);
+      display: inline-block;
+      max-width: 100%;
+      transition: box-shadow .3s, transform .3s;
+    }
+
+    .cam-wrap:hover {
+      box-shadow: var(--shadow-lg);
+      transform: scale(1.01);
+    }
+
+    .cam-wrap img {
+      display: block;
+      max-width: 100%;
+      height: auto;
+    }
+
+    /* loading */
+    .dots span {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      margin: 0 2.5px;
+      animation: dotB 1.3s infinite ease-in-out both;
+    }
+
+    .dots span:nth-child(1) {
+      background: var(--g-blue);
+      animation-delay: -.32s;
+    }
+
+    .dots span:nth-child(2) {
+      background: var(--g-red);
+      animation-delay: -.16s;
+    }
+
+    .dots span:nth-child(3) {
+      background: var(--g-yellow);
+      animation-delay: 0s;
+    }
+
+    .dots span:nth-child(4) {
+      background: var(--g-green);
+      animation-delay: .16s;
+    }
+
+    @keyframes dotB {
+
+      0%,
+      80%,
+      100% {
+        transform: scale(.4);
+        opacity: .4;
+      }
+
+      40% {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+
+    .scan-bar {
+      height: 3px;
+      border-radius: 2px;
+      background: linear-gradient(90deg, var(--g-blue), var(--g-red), var(--g-yellow), var(--g-green), var(--g-blue));
+      background-size: 300% 100%;
+      animation: scanSlide 1.8s linear infinite;
+    }
+
+    @keyframes scanSlide {
+      0% {
+        background-position: 0% 0%;
+      }
+
+      100% {
+        background-position: -300% 0%;
+      }
+    }
+
+    .err-card {
+      background: rgba(234, 67, 53, .07);
+      border: 1.5px solid rgba(234, 67, 53, .2);
+      border-radius: 16px;
+      padding: 18px 20px;
+      color: #c5221f;
+      font-size: .88rem;
+    }
+
+    /* ── BOTTOM BAR ── */
+    .bbar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 300;
+      padding: 14px 20px 24px;
+      background: linear-gradient(to top, rgba(255, 255, 255, 1) 60%, rgba(255, 255, 255, 0));
+    }
+
+    .bbar-inner {
+      max-width: 720px;
+      margin: 0 auto;
+    }
+
+    .bbar-zone {
+      background: var(--bg);
+      border: 1.5px solid var(--border2);
+      border-radius: var(--r);
+      padding: 10px 10px 10px 18px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      cursor: pointer;
+      box-shadow: var(--shadow-md);
+      transition: border-color .2s, box-shadow .2s;
+    }
+
+    .bbar-zone:hover {
+      border-color: var(--g-blue);
+      box-shadow: var(--shadow-lg);
+    }
+
+    .bbar-zone.dragover {
+      border-color: var(--g-blue);
+      background: #f0f6ff;
+    }
+
+    .bbar-zone.has-file {
+      border-color: var(--g-green);
+    }
+
+    .bbar-icon {
+      width: 38px;
+      height: 38px;
+      border-radius: 12px;
+      background: var(--g-blue-l);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .bbar-main {
+      flex: 1;
+      font-size: .88rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .bbar-main.has-file {
+      color: var(--g-green);
+    }
+
+    .bbar-sub {
+      font-size: .7rem;
+      color: var(--text3);
+      font-family: var(--mono);
+      margin-top: 1px;
+    }
+
+    .bbar-send {
+      width: 42px;
+      height: 42px;
+      border-radius: 13px;
+      background: var(--g-blue);
+      color: #fff;
+      border: none;
+      cursor: pointer;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all .2s;
+      box-shadow: 0 2px 8px rgba(66, 133, 244, .3);
+    }
+
+    .bbar-send:disabled {
+      opacity: .22;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    .bbar-send:not(:disabled):hover {
+      background: #1a73e8;
+      transform: scale(1.07);
+      box-shadow: 0 4px 16px rgba(66, 133, 244, .4);
+    }
+
+    .bbar-send:active {
+      transform: scale(.95);
+    }
+
+    .disclaimer {
+      font-size: .66rem;
+      color: var(--text3);
+      text-align: center;
+      margin-top: 8px;
+      font-family: var(--mono);
+    }
+
+    /* ── WELCOME TRANSITION ── */
+    #welcome {
+      transition: opacity .5s ease;
+    }
+
+    #welcome.hidden {
+      opacity: 0;
+      pointer-events: none;
+      height: 0;
+      overflow: hidden;
+    }
+
+    /* ── SCROLL REVEAL ── */
+    .rv {
+      opacity: 0;
+      transform: translateY(22px);
+      transition: opacity .65s ease, transform .65s ease;
+    }
+
+    .rv.in {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* ── KEYFRAMES ── */
+    @keyframes up {
+      from {
+        opacity: 0;
+        transform: translateY(22px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+
+      to {
+        opacity: 1;
+      }
+    }
+
+    /* ── RESPONSIVE ── */
+    @media(max-width:640px) {
+      header {
+        padding: 0 18px;
+      }
+
+      .hero {
+        padding: 64px 16px 64px;
+      }
+
+      .section,
+      .team-section {
+        padding: 72px 16px;
+      }
+
+      .guide-card {
+        flex-direction: column;
+        text-align: center;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div id="cur"></div>
+  <div id="cur-ring"></div>
+  <div id="shapes"></div>
+
+  <!-- ── HEADER ── -->
+  <header>
+    <a class="logo" href="#">
+      <div class="logo-box">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+          <path d="M12 2L4 7l8 5 8-5-8-5z" fill="white" opacity=".95" />
+          <path d="M4 12l8 5 8-5" stroke="white" stroke-width="2" stroke-linecap="round" fill="none" opacity=".7" />
+          <path d="M4 17l8 5 8-5" stroke="white" stroke-width="2" stroke-linecap="round" fill="none" opacity=".45" />
+        </svg>
+      </div>
+      DeepSight
+    </a>
+    <div class="header-right">
+      <div class="h-chip">
+        <div class="h-dot"></div>XceptionNet + Grad-CAM
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- ══ WELCOME SECTION ══════════════════════════════════ -->
+    <div id="welcome">
+
+      <!-- HERO -->
+      <div class="hero">
+        <div class="hero-badge">
+          <svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+          </svg>
+          AI-Powered Image Forensics
+        </div>
+
+        <h1 class="hero-h1">
+          <span style="display:block;color:var(--text);">See Through</span>
+          <span class="line2" style="color:var(--g-blue);">
+            Deepfakes
+          </span>
+        </h1>
+
+        <p class="hero-sub">
+          Upload any facial image. Our neural network identifies AI-manipulated regions with pixel-level precision — and
+          explains exactly what it found.
+        </p>
+
+        <div class="upload-wrap">
+          <div class="upload-card" id="hero-drop">
+            <input type="file" id="file-input" accept="image/*" style="display:none">
+            <div class="upload-inner">
+              <div class="upload-ring" id="u-ring">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#4285f4" stroke-width="2"
+                  stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                  <polyline points="17 8 12 3 7 8" />
+                  <line x1="12" y1="3" x2="12" y2="15" />
+                </svg>
+              </div>
+              <div>
+                <div class="upload-title" id="u-label">Drop an image here, or click to browse</div>
+                <div class="upload-sub">JPG · PNG · WEBP · BMP &nbsp;·&nbsp; <kbd>Enter</kbd> to analyze</div>
+              </div>
+              <div class="file-picked" id="u-picked">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#34a853" stroke-width="2.5">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+                <span id="u-fname"></span>
+              </div>
+              <button class="analyze-btn" id="hero-btn" disabled>Analyze Image</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="scroll-cue">
+          <span>Scroll to explore</span>
+          <div class="arrow-down"></div>
+        </div>
+      </div><!-- /hero -->
+
+      <!-- HOW IT WORKS -->
+      <div class="divider"></div>
+      <div class="section">
+        <div class="section-center">
+          <div class="eyebrow rv" style="background:var(--g-blue-l);color:var(--g-blue);">How it works</div>
+          <h2 class="section-h2 rv">Neural analysis,<br>made transparent.</h2>
+          <p class="section-p rv">Every prediction comes with a heatmap and plain-English explanation of which part of
+            the face gave it away.</p>
+        </div>
+        <div class="how-grid">
+          <div class="how-card c-blue rv">
+            <div class="how-step" style="background:var(--g-blue-l);color:var(--g-blue);">01 · Upload</div>
+            <div class="how-icon" style="background:var(--g-blue-l);">📤</div>
+            <div class="how-title">Submit Any Image</div>
+            <div class="how-desc">Drag and drop or browse. JPEG, PNG, WebP and BMP all supported with instant
+              validation.</div>
+          </div>
+          <div class="how-card c-red rv" style="transition-delay:.1s">
+            <div class="how-step" style="background:var(--g-red-l);color:var(--g-red);">02 · Detect</div>
+            <div class="how-icon" style="background:var(--g-red-l);">🧠</div>
+            <div class="how-title">XceptionNet Classifies</div>
+            <div class="how-desc">Depthwise separable convolutions scan for GAN artifacts, texture anomalies, and
+              unnatural blending.</div>
+          </div>
+          <div class="how-card c-yellow rv" style="transition-delay:.2s">
+            <div class="how-step" style="background:var(--g-yellow-l);color:#92600a;">03 · Explain</div>
+            <div class="how-icon" style="background:var(--g-yellow-l);">🔥</div>
+            <div class="how-title">Grad-CAM Heatmaps</div>
+            <div class="how-desc">Gradient activation maps highlight exactly which pixels drove the model toward its
+              decision.</div>
+          </div>
+          <div class="how-card c-green rv" style="transition-delay:.3s">
+            <div class="how-step" style="background:var(--g-green-l);color:#137333;">04 · Locate</div>
+            <div class="how-icon" style="background:var(--g-green-l);">🎯</div>
+            <div class="how-title">MediaPipe Landmarks</div>
+            <div class="how-desc">478-point face mesh maps activations to real anatomical regions — eyes, lips, cheeks,
+              jawline.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TEAM -->
+      <div class="divider"></div>
+      <div class="team-section">
+        <div class="section-center">
+          <div class="eyebrow rv" style="background:rgba(124,58,237,.1);color:#7c3aed;">Research Team</div>
+          <h2 class="section-h2 rv">The minds<br>behind DeepSight.</h2>
+          <p class="section-p rv">Artificial Intelligence &amp; Data Science · VPKBIET Baramati, India</p>
+        </div>
+
+        <!-- Guide -->
+        <div class="guide-wrap rv">
+          <div class="guide-card">
+            <div class="t-avatar"
+              style="background:linear-gradient(135deg,#a855f7,#7c3aed);width:68px;height:68px;border-radius:20px;font-size:1.1rem;">
+              HJ</div>
+            <div>
+              <div class="t-name" style="font-size:1.05rem;margin-bottom:6px;">Prof. Hema Jadhav</div>
+              <div class="t-badge" style="background:rgba(124,58,237,.1);color:#7c3aed;margin-bottom:8px;">Project Guide
+              </div>
+              <div class="t-dept">Assistant Professor</div>
+              <div class="t-inst">AI &amp; Data Science · VPKBIET, Baramati, India</div>
+              <a class="t-email" href="mailto:hema.jadhav@vpkbiet.org">hema.jadhav@vpkbiet.org</a>
+            </div>
+            <div class="guide-badge">Guide</div>
+          </div>
+        </div>
+
+        <!-- Students -->
+        <div class="team-grid">
+          <div class="team-card rv">
+            <div class="t-avatar" style="background:linear-gradient(135deg,var(--g-blue),#1a56c4);">PS</div>
+            <div class="t-name">Pruthviraj Salunke</div>
+            <div class="t-badge" style="background:var(--g-blue-l);color:var(--g-blue);">Research Scholar</div>
+            <div class="t-dept">AI &amp; Data Science</div>
+            <div class="t-inst">VPKBIET, Baramati</div>
+            <a class="t-email" href="mailto:mepruthvi28@gmail.com">mepruthvi28@gmail.com</a>
+          </div>
+          <div class="team-card rv" style="transition-delay:.1s">
+            <div class="t-avatar" style="background:linear-gradient(135deg,var(--g-red),#b71c1c);">SR</div>
+            <div class="t-name">Shreyash Ransing</div>
+            <div class="t-badge" style="background:var(--g-red-l);color:var(--g-red);">Research Scholar</div>
+            <div class="t-dept">AI &amp; Data Science</div>
+            <div class="t-inst">VPKBIET, Baramati</div>
+            <a class="t-email" href="mailto:shreyashransing277@gmail.com">shreyashransing277@gmail.com</a>
+          </div>
+          <div class="team-card rv" style="transition-delay:.2s">
+            <div class="t-avatar" style="background:linear-gradient(135deg,#f59e0b,#b45309);">AC</div>
+            <div class="t-name">Adwait Choudhari</div>
+            <div class="t-badge" style="background:var(--g-yellow-l);color:#92600a;">Research Scholar</div>
+            <div class="t-dept">AI &amp; Data Science</div>
+            <div class="t-inst">VPKBIET, Baramati</div>
+            <a class="t-email" href="mailto:adwaitchoudhari2003@gmail.com">adwaitchoudhari2003@gmail.com</a>
+          </div>
+          <div class="team-card rv" style="transition-delay:.3s">
+            <div class="t-avatar" style="background:linear-gradient(135deg,var(--g-green),#1b5e20);">OD</div>
+            <div class="t-name">Om Deshmukh</div>
+            <div class="t-badge" style="background:var(--g-green-l);color:#137333;">Research Scholar</div>
+            <div class="t-dept">AI &amp; Data Science</div>
+            <div class="t-inst">VPKBIET, Baramati</div>
+            <a class="t-email" href="mailto:deshmukhom2712@gmail.com">deshmukhom2712@gmail.com</a>
+          </div>
+        </div>
+
+        <div class="inst-bar rv">
+          <div class="inst-pill">
+            <div class="inst-icon">VP</div>
+            <div>
+              <div class="inst-name">VPKBIET, Baramati</div>
+              <div class="inst-sub">Artificial Intelligence &amp; Data Science Department, India</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <footer>DeepSight · XceptionNet + Grad-CAM + MediaPipe · VPKBIET Baramati</footer>
+
+    </div><!-- /welcome -->
+
+    <!-- ── CHAT RESULTS ── -->
+    <div id="chat-wrapper">
+      <div id="messages"></div>
+    </div>
+
+  </main>
+
+  <!-- ── BOTTOM BAR ── -->
+  <div class="bbar" id="bbar" style="display:none">
+    <div class="bbar-inner">
+      <div class="bbar-zone" id="bbar-zone">
+        <input type="file" id="file-input-b" accept="image/*" style="display:none">
+        <div class="bbar-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4285f4" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <polyline points="17 8 12 3 7 8" />
+            <line x1="12" y1="3" x2="12" y2="15" />
+          </svg>
+        </div>
+        <div style="flex:1;min-width:0;">
+          <div class="bbar-main" id="bbar-label">Upload another image to analyze</div>
+          <div class="bbar-sub">Drag &amp; drop or click · Press Enter to send</div>
+        </div>
+        <button class="bbar-send" id="bbar-send" disabled type="button">
+          <svg width="18" height="18" fill="white" viewBox="0 0 24 24">
+            <path d="M3 20v-6l8-2-8-2V4l19 8z" />
+          </svg>
+        </button>
+      </div>
+      <div class="disclaimer">DeepSight may produce inaccurate results. Always verify with additional tools.</div>
+    </div>
+  </div>
+
+  <script>
+    // ── CURSOR ──────────────────────────────────────────
+    const cur = document.getElementById('cur'), ring = document.getElementById('cur-ring');
+    let mx = 0, my = 0, tx = 0, ty = 0;
+    document.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; });
+    (function ac() {
+      tx += (mx - tx) * .16; ty += (my - ty) * .16;
+      cur.style.left = mx + 'px'; cur.style.top = my + 'px';
+      ring.style.left = tx + 'px'; ring.style.top = ty + 'px';
+      requestAnimationFrame(ac);
+    })();
+    document.addEventListener('mousedown', () => cur.style.transform = 'translate(-50%,-50%) scale(2)');
+    document.addEventListener('mouseup', () => cur.style.transform = 'translate(-50%,-50%) scale(1)');
+
+    // ── FLOATING SHAPES (Google Antigravity style) ───────
+    (() => {
+      const wrap = document.getElementById('shapes');
+      const C = [
+        { s: '#4285f4', l: 'rgba(66,133,244,' },
+        { s: '#ea4335', l: 'rgba(234,67,53,' },
+        { s: '#fbbc04', l: 'rgba(251,188,4,' },
+        { s: '#34a853', l: 'rgba(52,168,83,' },
+      ];
+      const defs = [
+        // Background blobs (large, blurred)
+        { t: 'blob', w: 340, h: 290, x: '-2%', y: '6%', c: 0, op: .07, bl: 70, dur: 18, del: 0 },
+        { t: 'blob', w: 260, h: 280, x: '76%', y: '3%', c: 1, op: .06, bl: 60, dur: 21, del: 4 },
+        { t: 'blob', w: 220, h: 200, x: '62%', y: '68%', c: 2, op: .07, bl: 55, dur: 15, del: 2 },
+        { t: 'blob', w: 300, h: 240, x: '-1%', y: '60%', c: 3, op: .055, bl: 65, dur: 19, del: 6 },
+        { t: 'blob', w: 160, h: 170, x: '44%', y: '-2%', c: 0, op: .05, bl: 48, dur: 13, del: 1 },
+        { t: 'blob', w: 180, h: 160, x: '88%', y: '42%', c: 3, op: .05, bl: 52, dur: 16, del: 3 },
+        // Crisp colorful pills (the Google Antigravity signature element)
+        { t: 'pill', w: 96, h: 38, x: '7%', y: '22%', c: 0, op: .88, bl: 0, dur: 8, del: 0, rot: 14 },
+        { t: 'pill', w: 64, h: 25, x: '84%', y: '16%', c: 1, op: .82, bl: 0, dur: 10, del: 1.8, rot: -22 },
+        { t: 'pill', w: 82, h: 32, x: '74%', y: '52%', c: 2, op: .85, bl: 0, dur: 9, del: .7, rot: 9 },
+        { t: 'pill', w: 52, h: 21, x: '14%', y: '70%', c: 3, op: .8, bl: 0, dur: 11, del: 2.2, rot: -14 },
+        { t: 'pill', w: 74, h: 29, x: '48%', y: '82%', c: 0, op: .78, bl: 0, dur: 12, del: 3.5, rot: 26 },
+        { t: 'pill', w: 48, h: 19, x: '91%', y: '75%', c: 3, op: .82, bl: 0, dur: 8, del: 1.2, rot: -9 },
+        { t: 'pill', w: 68, h: 27, x: '28%', y: '9%', c: 1, op: .76, bl: 0, dur: 10, del: 2.8, rot: 19 },
+        { t: 'pill', w: 56, h: 22, x: '55%', y: '4%', c: 2, op: .74, bl: 0, dur: 9, del: .4, rot: -16 },
+        { t: 'pill', w: 44, h: 18, x: '35%', y: '91%', c: 1, op: .72, bl: 0, dur: 13, del: 4, rot: 8 },
+        // Small solid circles
+        { t: 'circ', w: 22, h: 22, x: '21%', y: '36%', c: 0, op: .65, bl: 0, dur: 7, del: .6 },
+        { t: 'circ', w: 15, h: 15, x: '67%', y: '28%', c: 1, op: .58, bl: 0, dur: 9, del: 1.2 },
+        { t: 'circ', w: 19, h: 19, x: '89%', y: '47%', c: 2, op: .6, bl: 0, dur: 8, del: 2.4 },
+        { t: 'circ', w: 13, h: 13, x: '4%', y: '48%', c: 3, op: .55, bl: 0, dur: 10, del: 3 },
+        { t: 'circ', w: 24, h: 24, x: '53%', y: '90%', c: 0, op: .5, bl: 0, dur: 11, del: 1.6 },
+        { t: 'circ', w: 11, h: 11, x: '39%', y: '54%', c: 1, op: .48, bl: 0, dur: 9, del: .2 },
+        { t: 'circ', w: 17, h: 17, x: '76%', y: '88%', c: 2, op: .52, bl: 0, dur: 8, del: 2 },
+        // Rings / donuts
+        { t: 'ring', w: 72, h: 72, x: '17%', y: '83%', c: 0, op: .38, bw: 4, dur: 14, del: 0 },
+        { t: 'ring', w: 108, h: 108, x: '79%', y: '80%', c: 1, op: .3, bw: 5, dur: 17, del: 2.5 },
+        { t: 'ring', w: 54, h: 54, x: '47%', y: '14%', c: 3, op: .35, bw: 3, dur: 12, del: 1 },
+        { t: 'ring', w: 140, h: 140, x: '1%', y: '30%', c: 2, op: .22, bw: 6, dur: 20, del: 3.5 },
+        { t: 'ring', w: 46, h: 46, x: '92%', y: '20%', c: 0, op: .32, bw: 3, dur: 10, del: .8 },
+      ];
+
+      let kf = '';
+      defs.forEach((d, i) => {
+        const c = C[d.c];
+        const el = document.createElement('div');
+        el.style.position = 'absolute';
+        el.style.pointerEvents = 'none';
+        const fa = 14 + Math.random() * 22;
+        const dx = (Math.random() - .5) * 28;
+        const r = d.rot || 0;
+        const kn = `sh${i}`;
+        kf += `@keyframes ${kn}{
+      0%{transform:translate(0,0) rotate(${r}deg);}
+      35%{transform:translate(${dx * .6}px,${-fa * .65}px) rotate(${r + 2.5}deg);}
+      70%{transform:translate(${dx}px,${-fa}px) rotate(${r - 2}deg);}
+      100%{transform:translate(0,0) rotate(${r}deg);}
+    }`;
+        const anim = `${kn} ${d.dur}s ${d.del}s ease-in-out infinite`;
+        el.style.left = d.x; el.style.top = d.y;
+        el.style.width = d.w + 'px'; el.style.height = d.h + 'px';
+        el.style.animation = anim;
+        if (d.t === 'blob') {
+          el.style.borderRadius = '50%';
+          el.style.background = c.s;
+          el.style.opacity = d.op;
+          el.style.filter = `blur(${d.bl}px)`;
+        } else if (d.t === 'pill') {
+          el.style.borderRadius = '100px';
+          el.style.background = c.s;
+          el.style.opacity = d.op;
+          el.style.boxShadow = `0 4px 18px ${c.l}.3),0 2px 6px rgba(0,0,0,.07)`;
+        } else if (d.t === 'circ') {
+          el.style.borderRadius = '50%';
+          el.style.background = c.s;
+          el.style.opacity = d.op;
+          el.style.boxShadow = `0 2px 10px ${c.l}.25)`;
+        } else if (d.t === 'ring') {
+          el.style.borderRadius = '50%';
+          el.style.background = 'transparent';
+          el.style.border = `${d.bw}px solid ${c.s}`;
+          el.style.opacity = d.op;
+        }
+        wrap.appendChild(el);
+      });
+      const st = document.createElement('style');
+      st.textContent = kf;
+      document.head.appendChild(st);
+
+      // Mouse parallax
+      let ptx = 0, pty = 0, pcx = 0, pcy = 0;
+      document.addEventListener('mousemove', e => {
+        ptx = (e.clientX / innerWidth - .5) * 30;
+        pty = (e.clientY / innerHeight - .5) * 22;
+      });
+      const els = wrap.querySelectorAll('div');
+      (function ap() {
+        pcx += (ptx - pcx) * .04; pcy += (pty - pcy) * .04;
+        els.forEach((s, i) => {
+          const d = .15 + (i % 7) * .16;
+          s.style.marginLeft = (pcx * d) + 'px';
+          s.style.marginTop = (pcy * d) + 'px';
+        });
+        requestAnimationFrame(ap);
+      })();
+
+      // Scroll parallax
+      window.addEventListener('scroll', () => {
+        wrap.style.transform = `translateY(${scrollY * .22}px)`;
+      });
+    })();
+
+    // ── SCROLL REVEAL ────────────────────────────────────
+    const ro = new IntersectionObserver(entries => {
+      entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); ro.unobserve(e.target); } });
+    }, { threshold: .1 });
+    document.querySelectorAll('.rv').forEach(el => ro.observe(el));
+
+    // ── FILE LOGIC ────────────────────────────────────────
+    const fileIn = document.getElementById('file-input');
+    const fileInB = document.getElementById('file-input-b');
+    const heroDrop = document.getElementById('hero-drop');
+    const heroBtn = document.getElementById('hero-btn');
+    const uLabel = document.getElementById('u-label');
+    const uPicked = document.getElementById('u-picked');
+    const uFname = document.getElementById('u-fname');
+    const uRing = document.getElementById('u-ring');
+    const bbarZone = document.getElementById('bbar-zone');
+    const bbarSend = document.getElementById('bbar-send');
+    const bbarLabel = document.getElementById('bbar-label');
+    const bbar = document.getElementById('bbar');
+
+    let file = null, busy = false;
+
+    function setFile(f) {
+      file = f;
+      const chat = bbar.style.display !== 'none';
+      if (!chat) {
+        uLabel.textContent = 'Ready to analyze!';
+        uFname.textContent = f.name;
+        uPicked.classList.add('show');
+        heroDrop.classList.add('has-file');
+        uRing.style.background = 'rgba(52,168,83,.12)';
+        heroBtn.disabled = false;
+        heroBtn.classList.add('show');
+        heroBtn.style.cssText = 'background:var(--g-green);box-shadow:0 3px 10px rgba(52,168,83,.35);';
+      } else {
+        bbarLabel.textContent = f.name;
+        bbarLabel.classList.add('has-file');
+        bbarZone.classList.add('has-file');
+        bbarSend.disabled = false;
+      }
+      document.body.focus();
+    }
+
+    function clearFile() {
+      file = null;
+      uLabel.textContent = 'Drop an image here, or click to browse';
+      uPicked.classList.remove('show');
+      uFname.textContent = '';
+      heroDrop.classList.remove('has-file');
+      uRing.style.background = '';
+      heroBtn.disabled = true;
+      heroBtn.classList.remove('show');
+      heroBtn.style.cssText = '';
+      bbarLabel.textContent = 'Upload another image to analyze';
+      bbarLabel.classList.remove('has-file');
+      bbarZone.classList.remove('has-file');
+      bbarSend.disabled = true;
+      fileIn.value = ''; fileInB.value = '';
+    }
+
+    heroDrop.addEventListener('click', e => { if (!e.target.closest('#hero-btn')) fileIn.click(); });
+    fileIn.addEventListener('change', () => { if (fileIn.files[0]) setFile(fileIn.files[0]); });
+    ['dragover', 'dragleave', 'drop'].forEach(ev => heroDrop.addEventListener(ev, e => {
+      e.preventDefault();
+      if (ev === 'dragover') heroDrop.classList.add('dragover');
+      else heroDrop.classList.remove('dragover');
+      if (ev === 'drop' && e.dataTransfer.files[0]) setFile(e.dataTransfer.files[0]);
+    }));
+    heroBtn.addEventListener('click', e => { e.preventDefault(); if (file && !busy) go(); });
+
+    bbarZone.addEventListener('click', e => { if (!e.target.closest('#bbar-send')) fileInB.click(); });
+    fileInB.addEventListener('change', () => { if (fileInB.files[0]) setFile(fileInB.files[0]); });
+    ['dragover', 'dragleave', 'drop'].forEach(ev => bbarZone.addEventListener(ev, e => {
+      e.preventDefault();
+      if (ev === 'dragover') bbarZone.classList.add('dragover');
+      else bbarZone.classList.remove('dragover');
+      if (ev === 'drop' && e.dataTransfer.files[0]) setFile(e.dataTransfer.files[0]);
+    }));
+    bbarSend.addEventListener('click', () => { if (file && !busy) go(); });
+
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Enter' && file && !busy) { e.preventDefault(); go(); }
+    });
+
+    // ── SUBMIT ────────────────────────────────────────────
+    const welcome = document.getElementById('welcome');
+    const chatWrap = document.getElementById('chat-wrapper');
+    const msgs = document.getElementById('messages');
+
+    function sb() { requestAnimationFrame(() => window.scrollTo({ top: document.body.scrollHeight + 600, behavior: 'smooth' })); }
+
+    async function go() {
+      const f = file; if (!f || busy) return; busy = true;
+      welcome.classList.add('hidden');
+      chatWrap.classList.add('visible');
+      bbar.style.display = 'block';
+      clearFile();
+
+      // user bubble
+      const url = URL.createObjectURL(f);
+      const um = document.createElement('div'); um.className = 'msg-user';
+      um.innerHTML = `<img src="${url}" alt="upload"/>`;
+      msgs.appendChild(um); sb();
+
+      // loading
+      const lid = 'l' + Date.now();
+      const lel = document.createElement('div'); lel.id = lid; lel.className = 'msg-ai';
+      lel.innerHTML = `
+    <div class="ai-av">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+        <path d="M12 2L4 7l8 5 8-5-8-5z" fill="white" opacity=".95"/>
+        <path d="M4 12l8 5 8-5" stroke="white" stroke-width="2" stroke-linecap="round" fill="none" opacity=".7"/>
+      </svg>
+    </div>
+    <div class="ai-body">
+      <div class="dots"><span></span><span></span><span></span><span></span></div>
+      <div style="font-size:.82rem;color:var(--text2);margin-top:10px;font-weight:500;">Analyzing pixels and gradients…</div>
+      <div class="scan-bar" style="margin-top:10px;width:200px;"></div>
+    </div>`;
+      msgs.appendChild(lel); sb();
+
+      const fd = new FormData(); fd.append('image', f);
+      try {
+        const res = await fetch("{{ url_for('predict') }}?fmt=json", {
+          method: 'POST', headers: { 'Accept': 'application/json' }, body: fd
+        });
+        document.getElementById(lid)?.remove();
+        const txt = await res.text();
+        let data;
+        try { data = JSON.parse(txt); }
+        catch { err('Server returned an invalid response.', txt.slice(0, 500)); busy = false; return; }
+        if (res.ok && !data.error) {
+          const fake = data.label === 'FAKE';
+          const conf = (data.probability * 100).toFixed(1);
+          const am = document.createElement('div'); am.className = 'msg-ai';
+          am.innerHTML = `
+        <div class="ai-av">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+            <path d="M12 2L4 7l8 5 8-5-8-5z" fill="white" opacity=".95"/>
+            <path d="M4 12l8 5 8-5" stroke="white" stroke-width="2" stroke-linecap="round" fill="none" opacity=".7"/>
+          </svg>
+        </div>
+        <div class="ai-body">
+          <div class="verdict-pill ${fake ? 'v-fake' : 'v-real'}">
+            <div class="v-dot"></div>
+            ${fake ? '⚠ Deepfake Detected' : '✓ Appears Authentic'}
+            &nbsp;·&nbsp; ${conf}% confidence
+          </div>
+          <div class="expl-card">${data.explanation}</div>
+          <div class="cam-label">Grad-CAM Thermal Analysis</div>
+          <div class="cam-wrap">
+            <img src="${data.gradcam_image}" alt="Grad-CAM"/>
+          </div>
+        </div>`;
+          msgs.appendChild(am);
+        } else { err(data.error || 'Unknown error.', data.trace || ''); }
+        busy = false;
+      } catch (e) {
+        document.getElementById(lid)?.remove();
+        busy = false; err('Network error: ' + e.message);
+      }
+      sb();
+    }
+
+    function err(msg, trace = '') {
+      const el = document.createElement('div'); el.className = 'msg-ai';
+      el.innerHTML = `
+    <div class="ai-av" style="background:#ea4335;">
+      <svg width="14" height="14" fill="white" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+    </div>
+    <div class="ai-body">
+      <div class="err-card">
+        <strong>${msg}</strong>
+        ${trace ? `<pre style="margin-top:10px;font-size:.63rem;opacity:.7;overflow-x:auto;white-space:pre-wrap;">${trace.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>` : ''}
+      </div>
+    </div>`;
+      msgs.appendChild(el);
+    }
+  </script>
+</body>
+
+</html>

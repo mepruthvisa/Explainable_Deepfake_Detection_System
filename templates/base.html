@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Deepfake Detector</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0b1220; --panel:#121a2b; --muted:#9db0d1; --text:#eef2ff; --accent:#5b8cff;
+    }
+    *{box-sizing:border-box}
+    body{margin:0; font-family:Inter,system-ui,Arial; background:var(--bg); color:var(--text)}
+    .container{max-width:980px; margin:0 auto; padding:28px}
+    .card{background:var(--panel); border:1px solid #1e2a44; border-radius:16px; padding:24px}
+    h1,h2{margin:0 0 12px 0}
+    .btn{background:var(--accent); color:white; border:none; padding:12px 18px; border-radius:10px; font-weight:600; cursor:pointer}
+    .btn:disabled{opacity:.6; cursor:not-allowed}
+    .muted{color:var(--muted)}
+    .grid{display:grid; gap:16px}
+    .grid-2{grid-template-columns:1fr 1fr}
+    img{max-width:100%; border-radius:12px}
+    .row{display:flex; gap:14px; align-items:center; flex-wrap:wrap}
+    .pill{background:#0d1730; padding:6px 10px; border:1px solid #1f2c4a; border-radius:999px}
+    .flash{background:#28151b; border:1px solid #5a2a37; padding:12px 14px; border-radius:12px; margin-bottom:12px; color:#ffd7de}
+    a{color:#b7ccff; text-decoration:none}
+  </style>
+</head>
+<body>
+  <div class="container">
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        {% for m in messages %}
+          <div class="flash">{{ m }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+    {% block content %}{% endblock %}
+  </div>
+</body>
+</html>

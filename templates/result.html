@@ -1,0 +1,32 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Result</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 40px; color:#111; }
+    .wrap { max-width: 800px; margin: 0 auto; }
+    img { width:100%; height:auto; border:1px solid #e5e7eb; border-radius:10px; }
+    .card { border:1px solid #e5e7eb; border-radius:10px; padding:16px; margin-top:18px; }
+    .btn { padding:10px 16px; border:0; background:#111827; color:#fff; border-radius:8px; cursor:pointer; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h2>Grad-CAM Analysis</h2>
+
+    <div>
+      <img src="{{ gradcam_image }}" alt="Grad-CAM">
+    </div>
+
+    <div class="card">
+      <h3>Explanation</h3>
+      <p style="white-space:pre-wrap">{{ explanation }}</p>
+    </div>
+
+    <div style="margin-top:16px">
+      <a class="btn" href="{{ url_for('index') }}">Analyze Another</a>
+    </div>
+  </div>
+</body>
+</html>
